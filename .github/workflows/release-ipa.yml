@@ -41,6 +41,20 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             clean build 2>&1 | tee xcodebuild.log
 
+      - name: Surface Xcode build errors
+        if: failure()
+        run: |
+          errors="$(grep -E 'error:|fatal error:|BUILD FAILED' xcodebuild.log | tail -n 60 || true)"
+          if [ -z "$errors" ]; then
+            echo "::error::xcodebuild failed without a compiler diagnostic; inspect the uploaded xcodebuild.log artifact."
+            tail -n 120 xcodebuild.log || true
+            exit 1
+          fi
+          while IFS= read -r line; do
+            [ -z "$line" ] || echo "::error::$line"
+          done <<< "$errors"
+          exit 1
+
       - name: Package unsigned IPA
         run: |
           set -euo pipefail
