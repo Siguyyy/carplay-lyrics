@@ -6,12 +6,28 @@ import ActivityKit
 @main
 struct DriveVerseWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        LyricsLiveActivity()
+        if #available(iOS 18.0, *) {
+            CarPlayLyricsLiveActivity()
+        } else {
+            LyricsLiveActivity()
+        }
     }
 }
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        lyricsActivityConfiguration()
+    }
+}
+
+@available(iOS 18.0, *)
+private struct CarPlayLyricsLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        lyricsActivityConfiguration().supplementalActivityFamilies([.small])
+    }
+}
+
+private func lyricsActivityConfiguration() -> ActivityConfiguration<LyricsAttributes> {
         ActivityConfiguration(for: LyricsAttributes.self) { context in
             if #available(iOS 18.0, *) {
                 SmallAwareLyricsView(context: context)
@@ -57,7 +73,6 @@ struct LyricsLiveActivity: Widget {
                     .foregroundStyle(.tint)
             }
         }
-    }
 }
 
 @available(iOS 18.0, *)
