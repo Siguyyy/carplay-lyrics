@@ -1,0 +1,9 @@
+.DS_Store
+Secrets.plist
+DriveVerse/Resources/Secrets.plist
+*.xcuserstate
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.xcarchive/
