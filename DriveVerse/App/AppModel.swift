@@ -37,6 +37,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var appleMusicAuth: MediaAuthStatus = .unknown
     @Published private(set) var spotifyConnected = false
     @Published private(set) var spotifyNeedsReconnect = false
+    @Published private(set) var spotifyDiagnostic = "Waiting for first playback check."
+    @Published private(set) var spotifyDiagnosticAt: Date?
     @Published var errorMessage: String?
     @Published var driveMode = false {
         didSet {
@@ -91,6 +93,12 @@ final class AppModel: ObservableObject {
             return (3...10).contains(value) ? value : SpotifySource.defaultActiveInterval
         }
         spotifySource = spotify
+        spotify.onDiagnostic = { [weak self] message, date in
+            Task { @MainActor in
+                self?.spotifyDiagnostic = message
+                self?.spotifyDiagnosticAt = date
+            }
+        }
 
         let applePublisher: AnyPublisher<NowPlayingState?, Never>
 #if os(iOS)
@@ -182,6 +190,16 @@ final class AppModel: ObservableObject {
 
     func disconnectSpotify() {
         spotifyAuth.disconnect()
+    }
+
+    func refreshSpotifyPlayback() {
+        guard spotifyConnected else {
+            spotifyDiagnostic = "Connect Spotify before checking playback."
+            spotifyDiagnosticAt = Date()
+            return
+        }
+        if !started { start() }
+        spotifySource.pollNow()
     }
 
     func retryLyrics() {

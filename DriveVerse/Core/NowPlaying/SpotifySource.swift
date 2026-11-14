@@ -25,6 +25,9 @@ final class SpotifySource: NowPlayingSource {
     private let tokenProvider: any SpotifyTokenProviding
     /// Settings-backed (3–10 s); read each cycle so changes apply immediately.
     var activeInterval: () -> TimeInterval = { SpotifySource.defaultActiveInterval }
+    /// Human-readable, credential-free status for troubleshooting playback reads.
+    var onDiagnostic: ((String, Date) -> Void)?
+    private func report(_ message: String) { onDiagnostic?(message, Date()) }
 
     private var pollTask: Task<Void, Never>?
 
@@ -59,6 +62,7 @@ final class SpotifySource: NowPlayingSource {
     /// One poll; returns the delay until the next one.
     func pollOnce() async -> TimeInterval {
         guard await tokenProvider.isConnected else {
+            report("Not connected to Spotify. Reconnect from the app.")
             subject.send(nil)
             return Self.idleInterval
         }
@@ -66,6 +70,7 @@ final class SpotifySource: NowPlayingSource {
         do {
             token = try await tokenProvider.validAccessToken()
         } catch {
+            report("Could not get a Spotify access token: \(error.localizedDescription)")
             subject.send(nil)
             return Self.idleInterval
         }
@@ -80,23 +85,34 @@ final class SpotifySource: NowPlayingSource {
             switch http.statusCode {
             case 200:
                 let state = try Self.parseCurrentlyPlaying(data, capturedAt: Date())
+                report(state == nil ? "Spotify returned playback data without a track (possibly an ad or private session)." : "Playback detected (HTTP 200).")
                 subject.send(state)
                 return state?.isPlaying == true ? activeInterval() : Self.idleInterval
             case 204: // nothing playing
+                report("Spotify returned HTTP 204: no current playback is available to this account. Start playback on the connected account, then refresh.")
                 subject.send(nil)
                 return Self.idleInterval
             case 401:
+                report("Spotify rejected the access token (HTTP 401). Refreshing authorization; reconnect if this persists.")
                 await tokenProvider.handleUnauthorized()
                 subject.send(nil)
                 return Self.idleInterval
             case 429:
                 let retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init)
+                report("Spotify rate limited playback checks (HTTP 429). Retrying after the server delay.")
                 return max(retryAfter ?? Self.idleInterval, 1)
+            case 403:
+                report("Spotify denied playback access (HTTP 403). Check that this Spotify account is allowed by the developer app and that the playback-read permissions were approved.")
+                subject.send(nil)
+                return Self.idleInterval
             default:
+                report("Spotify playback request failed (HTTP \(http.statusCode)).")
+                subject.send(nil)
                 return Self.idleInterval
             }
         } catch {
             // Transient network error (tunnel, dead zone) — just try again.
+            report("Network or response error while checking Spotify: \(error.localizedDescription)")
             return Self.idleInterval
         }
     }

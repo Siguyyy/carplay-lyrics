@@ -164,6 +164,24 @@ private struct SpotifySection: View {
             } else if model.spotifyConnected {
                 Label("Connected", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                DisclosureGroup("Playback diagnostics") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(model.spotifyDiagnostic)
+                            .font(.footnote)
+                            .textSelection(.enabled)
+                        if let checkedAt = model.spotifyDiagnosticAt {
+                            Text("Last checked \(checkedAt.formatted(date: .omitted, time: .shortened))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Button("Check Spotify now") {
+                            model.refreshSpotifyPlayback()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.top, 6)
+                }
+                .font(.footnote)
             } else {
                 TextField("Paste Spotify Client ID", text: $clientIDInput)
                     .textInputAutocapitalization(.never)
