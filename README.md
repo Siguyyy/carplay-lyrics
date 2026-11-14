@@ -19,7 +19,7 @@ On a Mac with Xcode 16 or newer:
 
 For a local unsigned simulator build, Xcode handles signing automatically. For a phone build, set your own team and bundle identifier in `project.yml`, regenerate, and configure signing in Xcode.
 
-Spotify support is optional. To enable it, copy `DriveVerse/Resources/Secrets.example.plist` to `Secrets.plist`, add your Spotify client ID, and register `carplaylyrics://callback` as the redirect URI in your Spotify app. Keep the secret file out of git.
+Spotify support is optional. To enable it, add your Spotify client ID in the app, register `carplaylyrics://callback` as the redirect URI in your Spotify Developer app, and authorize Spotify. **Spotify Development Mode requires an active Premium subscription on the Developer app owner’s account.** The Spotify account connected in CarPlay Lyrics must also be added under that app’s **Users and Access** allowlist. Without these requirements, Spotify may authorize successfully but playback requests can fail with HTTP 403. Keep client credentials private; never commit personal secrets.
 
 ## Downloadable IPA releases
 

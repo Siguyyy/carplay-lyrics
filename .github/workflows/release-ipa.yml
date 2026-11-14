@@ -26,6 +26,9 @@ jobs:
       - name: Generate Xcode project
         run: bash scripts/generate.sh
 
+      - name: Run core unit tests
+        run: bash scripts/test.sh
+
       - name: Build unsigned iOS app
         run: |
           set -o pipefail
@@ -84,6 +87,8 @@ jobs:
             Download `CarPlayLyrics-unsigned.ipa` below and install/sign it with AltStore, SideStore, Sideloadly, or another sideloading tool. This package is unsigned and cannot be installed directly by tapping it on an iPhone.
 
             This build targets iOS 17+ for the app and preview. Actual Live Activity mirroring to CarPlay requires iOS 26+.
+
+            Spotify Development Mode requires an active Premium subscription on the Developer app owner's account. The connected Spotify account must be on the app's Users and Access allowlist.
           prerelease: false
           make_latest: true
           files: CarPlayLyrics-unsigned.ipa

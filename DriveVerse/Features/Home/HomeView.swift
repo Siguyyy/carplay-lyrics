@@ -164,6 +164,9 @@ private struct SpotifySection: View {
             } else if model.spotifyConnected {
                 Label("Connected", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                Text("Spotify playback requires Premium on the Spotify account that owns the Developer app (Development Mode). The account connected here must also be on that app’s user allowlist.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 DisclosureGroup("Playback diagnostics") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(model.spotifyDiagnostic)
@@ -206,7 +209,7 @@ private struct SpotifySection: View {
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
                     Text("4. Save, copy the Client ID from the app page, paste it above, and tap Save Client ID. Then tap Connect Spotify and approve access.")
-                    Text("The Client ID is not your password. Spotify’s development mode may require Premium for the developer account.")
+                    Text("Spotify Development Mode requires an active Premium subscription on the Developer app owner’s account. Add the account you connect here under the app’s Users and Access allowlist. The Client ID is not your password.")
                         .foregroundStyle(.secondary)
                 }
                 .font(.footnote)

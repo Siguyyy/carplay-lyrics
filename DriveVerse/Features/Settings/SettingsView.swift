@@ -38,7 +38,7 @@ struct SettingsView: View {
             } header: {
                 Text("Spotify")
             } footer: {
-                Text("How often DriveVerse asks Spotify what's playing. Lower is snappier; higher saves battery and API quota. Between reports, lyric timing is extrapolated locally.")
+                Text("How often DriveVerse asks Spotify what's playing. Lower is snappier; higher saves battery and API quota. Between reports, lyric timing is extrapolated locally. Spotify Development Mode also requires Premium on the Developer app owner’s account, and the connected account must be allowlisted in the app’s Users and Access settings.")
             }
 
             Section {
