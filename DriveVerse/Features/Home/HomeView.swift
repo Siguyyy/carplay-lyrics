@@ -148,6 +148,8 @@ private struct LyricPreviewCard: View {
 
 private struct SpotifySection: View {
     @EnvironmentObject private var model: AppModel
+    @State private var clientIDInput = ""
+    @State private var showSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -155,11 +157,7 @@ private struct SpotifySection: View {
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
-            if !model.spotifyAuth.hasClientID {
-                Text("Add your Spotify client ID: copy Secrets.example.plist to Secrets.plist and paste the ID from developer.spotify.com. See README.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else if model.spotifyNeedsReconnect {
+            if model.spotifyNeedsReconnect {
                 InfoBanner(symbol: "exclamationmark.triangle",
                            text: "Spotify session expired.")
                 connectButton(title: "Reconnect Spotify")
@@ -167,12 +165,45 @@ private struct SpotifySection: View {
                 Label("Connected", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
+                TextField("Paste Spotify Client ID", text: $clientIDInput)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.asciiCapable)
+                    .textFieldStyle(.roundedBorder)
+                Button("Save Client ID") {
+                    model.spotifyAuth.saveClientID(clientIDInput)
+                }
+                .disabled(clientIDInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 connectButton(title: "Connect Spotify")
+                    .disabled(!model.spotifyAuth.hasClientID)
             }
+
+            DisclosureGroup("How to get a Client ID", isExpanded: $showSetup) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("1. Open Spotify’s Developer Dashboard and sign in.")
+                    Link("Open Developer Dashboard", destination: URL(string: "https://developer.spotify.com/dashboard")!)
+                    Text("2. Create an app. Any app name is fine; this is just your personal connection.")
+                    Text("3. Open the app’s Settings and add this exact Redirect URI:")
+                    Text(SpotifyAuth.redirectURI)
+                        .font(.system(.footnote, design: .monospaced))
+                        .textSelection(.enabled)
+                    Text("4. Save, copy the Client ID from the app page, paste it above, and tap Save Client ID. Then tap Connect Spotify and approve access.")
+                    Text("The Client ID is not your password. Spotify’s development mode may require Premium for the developer account.")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.footnote)
+                .padding(.top, 8)
+            }
+            .font(.footnote)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
+        .onAppear {
+            if clientIDInput.isEmpty {
+                clientIDInput = model.spotifyAuth.clientID ?? ""
+            }
+        }
     }
 
     private func connectButton(title: String) -> some View {

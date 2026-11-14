@@ -223,6 +223,7 @@ enum SecretsLoader {
 final class SpotifyAuth: NSObject, ObservableObject {
     static let redirectURI = "carplaylyrics://callback"
     static let callbackScheme = "carplaylyrics"
+    private static let clientIDKey = "spotifyClientID"
     static let scopes = "user-read-currently-playing user-read-playback-state"
     /// A 401 arriving this soon after a successful refresh means the grant
     /// itself is dead — reconnect instead of refresh-looping.
@@ -231,7 +232,7 @@ final class SpotifyAuth: NSObject, ObservableObject {
     @Published private(set) var isConnected: Bool
     @Published var needsReconnect = false
 
-    let clientID: String?
+    @Published private(set) var clientID: String?
     private let store: TokenStore
     private let tokenClient: SpotifyTokenClient
     private var refreshTask: Task<SpotifyToken, Error>?
@@ -245,12 +246,22 @@ final class SpotifyAuth: NSObject, ObservableObject {
     ) {
         self.store = store
         self.tokenClient = SpotifyTokenClient(session: session)
-        self.clientID = clientID
+        self.clientID = UserDefaults.standard.string(forKey: Self.clientIDKey) ?? clientID
         self.isConnected = store.load() != nil
         super.init()
     }
 
     var hasClientID: Bool { clientID != nil }
+
+    func saveClientID(_ value: String) {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        clientID = cleaned.isEmpty ? nil : cleaned
+        if let clientID {
+            UserDefaults.standard.set(clientID, forKey: Self.clientIDKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.clientIDKey)
+        }
+    }
 
     func disconnect() {
         store.clear()
