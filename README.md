@@ -40,7 +40,7 @@ The workflow runs XcodeGen with Bash explicitly, builds the iOS app with code si
 
 ## Tests
 
-The core unit suite is available from Xcode (`Cmd-U`) or `./scripts/test.sh` on macOS with Xcode command line tools.
+The core unit suite is available from Xcode (`Cmd-U`) or `./scripts/test.sh` on macOS with Xcode and an iOS Simulator. GitHub Actions runs this suite before packaging each release.
 
 ## License
 

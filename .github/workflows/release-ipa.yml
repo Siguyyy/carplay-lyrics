@@ -30,6 +30,7 @@ jobs:
         run: bash scripts/test.sh
 
       - name: Build unsigned iOS app
+        id: ios-build
         run: |
           set -o pipefail
           xcodebuild \
@@ -45,7 +46,7 @@ jobs:
             clean build 2>&1 | tee xcodebuild.log
 
       - name: Surface Xcode build errors
-        if: failure()
+        if: failure() && steps.ios-build.outcome == 'failure'
         run: |
           errors="$(grep -E 'error:|fatal error:|BUILD FAILED' xcodebuild.log | tail -n 60 || true)"
           if [ -z "$errors" ]; then
