@@ -12,9 +12,13 @@ struct DriveVerseWidgetsBundle: WidgetBundle {
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: LyricsAttributes.self) { context in
+        let configuration = ActivityConfiguration(for: LyricsAttributes.self) { context in
             // Keep the ActivityConfiguration on APIs available from iOS 17.
-            LockScreenLyricsView(context: context)
+            if #available(iOS 18.0, *) {
+                SmallAwareLyricsView(context: context)
+            } else {
+                LockScreenLyricsView(context: context)
+            }
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -50,8 +54,47 @@ struct LyricsLiveActivity: Widget {
                     .frame(maxWidth: 72)
             } minimal: {
                 Image(systemName: "music.note")
+                    .font(.caption2)
                     .foregroundStyle(.tint)
             }
+        }
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct SmallAwareLyricsView: View {
+    @Environment(\.activityFamily) private var activityFamily
+    let context: ActivityViewContext<LyricsAttributes>
+
+    var body: some View {
+        if activityFamily == .small {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(context.state.title)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(context.state.currentLine)
+                    .font(.system(size: 15, weight: .bold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
+                if !context.state.nextLine.isEmpty {
+                    Text(context.state.nextLine)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .activityBackgroundTint(Color.black.opacity(0.75))
+            .activitySystemActionForegroundColor(.white)
+        } else {
+            LockScreenLyricsView(context: context)
         }
     }
 }

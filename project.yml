@@ -35,7 +35,7 @@ targets:
     info:
       path: DriveVerse/Resources/Info.plist
       properties:
-        CFBundleDisplayName: CarPlay Lyrics
+        CFBundleDisplayName: "Simon's Karaoke"
         NSSupportsLiveActivities: true
         # Lyric lines change every few seconds — without the frequent-updates
         # budget, ActivityKit silently stops rendering updates ~30 s after
@@ -79,7 +79,7 @@ targets:
     info:
       path: DriveVerseWidgets/Info.plist
       properties:
-        CFBundleDisplayName: DriveVerse Lyrics
+        CFBundleDisplayName: "Simon's Karaoke"
         NSSupportsLiveActivitiesFrequentUpdates: true
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension

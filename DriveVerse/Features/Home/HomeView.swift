@@ -30,7 +30,7 @@ struct HomeView: View {
                 }
                 .padding()
             }
-            .navigationTitle("CarPlay Lyrics")
+            .navigationTitle("Simon's Karaoke")
             .toolbar {
                 NavigationLink {
                     SettingsView()
