@@ -16,9 +16,11 @@ struct LyricsAttributes: ActivityAttributes {
         var sourceName: String
         var currentLine: String
         var nextLine: String
+        var nextNextLine: String?
         /// 0–1 progress through the whole track.
         var progress: Double
         var isPlaying: Bool
+        var lyricsFocus: Bool?
     }
 }
 #endif

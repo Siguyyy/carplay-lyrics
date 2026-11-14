@@ -65,18 +65,41 @@ private struct SmallAwareLyricsView: View {
     var body: some View {
         if activityFamily == .small {
             VStack(alignment: .leading, spacing: 3) {
-                Text(context.state.title)
-                    .font(.system(size: 10, weight: .medium))
+                if context.state.lyricsFocus != true && context.state.currentLine.count <= 58 {
+                    HStack(spacing: 4) {
+                        Image(systemName: context.state.isPlaying ? "music.note" : "pause.fill")
+                            .font(.system(size: 9, weight: .semibold))
+                        Text(context.state.title)
+                            .font(.system(size: 10, weight: .medium))
+                            .lineLimit(1)
+                    }
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                }
+
                 Text(context.state.currentLine)
                     .font(.system(size: 16, weight: .bold))
-                    .lineLimit(3)
-                if !context.state.nextLine.isEmpty {
+                    .lineLimit(context.state.lyricsFocus == true || context.state.currentLine.count > 58 ? nil : 3)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: context.state.lyricsFocus == true || context.state.currentLine.count > 58
+                    )
+
+                if !context.state.nextLine.isEmpty && context.state.currentLine.count < 58 {
                     Text(context.state.nextLine)
-                        .font(.system(size: 12))
+                        .font(.system(size: context.state.lyricsFocus == true ? 16 : 12))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(context.state.lyricsFocus == true ? 2 : 1)
+                        .fixedSize(horizontal: false, vertical: context.state.lyricsFocus == true)
+                }
+                if context.state.lyricsFocus == true,
+                   let nextNextLine = context.state.nextNextLine,
+                   !nextNextLine.isEmpty,
+                   context.state.currentLine.count + context.state.nextLine.count < 92 {
+                    Text(nextNextLine)
+                        .font(.system(size: 16))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

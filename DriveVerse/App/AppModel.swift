@@ -26,6 +26,7 @@ final class AppModel: ObservableObject {
 
     static let pollIntervalKey = "spotifyPollInterval"
     static let sourcePinKey = "sourcePin"
+    static let lyricsFocusKey = "carPlayLyricsFocus"
 
     private static let log = Logger(subsystem: "com.praveetgupta.driveverse", category: "pipeline")
 
@@ -63,6 +64,14 @@ final class AppModel: ObservableObject {
             objectWillChange.send()
             coordinator.pin = newValue
             UserDefaults.standard.set(newValue.rawValue, forKey: Self.sourcePinKey)
+        }
+    }
+
+    var lyricsFocusLayout: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.lyricsFocusKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.lyricsFocusKey)
+            syncLiveActivity()
         }
     }
 
@@ -159,7 +168,7 @@ final class AppModel: ObservableObject {
     func startDriveSession() {
 #if os(iOS)
         start()
-        liveActivity.beginSession(state: nowPlaying, position: position)
+        liveActivity.beginSession(state: nowPlaying, position: position, lyricsFocus: lyricsFocusLayout)
         driveMode = true
         foregroundResync()
 #endif
@@ -274,7 +283,12 @@ final class AppModel: ObservableObject {
 #if os(iOS)
         var hasSyncedLyrics = false
         if case .synced = lyricsState { hasSyncedLyrics = true }
-        liveActivity.sync(state: nowPlaying, position: position, hasSyncedLyrics: hasSyncedLyrics)
+        liveActivity.sync(
+            state: nowPlaying,
+            position: position,
+            hasSyncedLyrics: hasSyncedLyrics,
+            lyricsFocus: lyricsFocusLayout
+        )
         updateKeepAlive()
 #endif
     }

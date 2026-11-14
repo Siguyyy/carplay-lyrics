@@ -33,6 +33,7 @@ final class LiveActivityController {
     private var pendingContent: LyricsAttributes.ContentState?
     private var lastSentTrackKey: String?
     private var lastSentIsPlaying: Bool?
+    private var lastSentLyricsFocus: Bool?
 
     /// Drive Mode's keep-alive only runs while an activity is actually up.
     var isActive: Bool { activity != nil }
@@ -52,7 +53,7 @@ final class LiveActivityController {
     }
 
     /// Single entry point, called from AppModel on every state/position change.
-    func sync(state: NowPlayingState?, position: LyricsPosition?, hasSyncedLyrics: Bool) {
+    func sync(state: NowPlayingState?, position: LyricsPosition?, hasSyncedLyrics: Bool, lyricsFocus: Bool) {
         guard let state else {
             if holdWhilePaused { cancelScheduledEnd() } else { scheduleEnd() }
             return
@@ -64,7 +65,7 @@ final class LiveActivityController {
             // simply retried on a later sync (heals on foreground resync).
             // The Start Drive Mode intent bypasses this via beginSession.
             if state.isPlaying, hasSyncedLyrics {
-                beginSession(state: state, position: position)
+                beginSession(state: state, position: position, lyricsFocus: lyricsFocus)
             }
             return
         }
@@ -79,13 +80,17 @@ final class LiveActivityController {
         guard policy.shouldUpdate(
             trackKey: key,
             lineIndex: position?.lineIndex,
-            isPlaying: state.isPlaying
+            isPlaying: state.isPlaying,
+            lyricsFocus: lyricsFocus
         ) else { return }
 
-        let critical = key != lastSentTrackKey || state.isPlaying != lastSentIsPlaying
+        let critical = key != lastSentTrackKey
+            || state.isPlaying != lastSentIsPlaying
+            || lyricsFocus != lastSentLyricsFocus
         lastSentTrackKey = key
         lastSentIsPlaying = state.isPlaying
-        let content = Self.content(state: state, position: position)
+        lastSentLyricsFocus = lyricsFocus
+        let content = Self.content(state: state, position: position, lyricsFocus: lyricsFocus)
 
         switch throttle.decide(critical: critical, now: Date()) {
         case .sendNow:
@@ -124,13 +129,13 @@ final class LiveActivityController {
     /// Mode intent — the one background context iOS grants Activity.request
     /// to. The intent path may run before any music plays; the placeholder
     /// content matters because a background app can only *update* from then on.
-    func beginSession(state: NowPlayingState?, position: LyricsPosition?) {
+    func beginSession(state: NowPlayingState?, position: LyricsPosition?, lyricsFocus: Bool = false) {
         guard activity == nil, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let content = state.map { Self.content(state: $0, position: position) }
+        let content = state.map { Self.content(state: $0, position: position, lyricsFocus: lyricsFocus) }
             ?? LyricsAttributes.ContentState(
                 title: "DriveVerse", artist: "", sourceName: "",
-                currentLine: "♪ Waiting for music…", nextLine: "",
-                progress: 0, isPlaying: false
+                currentLine: "Waiting for music…", nextLine: "", nextNextLine: "",
+                progress: 0, isPlaying: false, lyricsFocus: lyricsFocus
             )
         do {
             let requested = try Activity.request(
@@ -143,14 +148,17 @@ final class LiveActivityController {
             if let state {
                 lastSentTrackKey = Self.key(for: state)
                 lastSentIsPlaying = state.isPlaying
+                lastSentLyricsFocus = lyricsFocus
                 policy.seed(
                     trackKey: Self.key(for: state),
                     lineIndex: position?.lineIndex,
-                    isPlaying: state.isPlaying
+                    isPlaying: state.isPlaying,
+                    lyricsFocus: lyricsFocus
                 )
             } else {
                 lastSentTrackKey = nil
                 lastSentIsPlaying = nil
+                lastSentLyricsFocus = lyricsFocus
                 policy.reset()
             }
         } catch {
@@ -209,15 +217,17 @@ final class LiveActivityController {
         "\(state.title)|\(state.artist)|\(state.source.rawValue)"
     }
 
-    private static func content(state: NowPlayingState, position: LyricsPosition?) -> LyricsAttributes.ContentState {
+    private static func content(state: NowPlayingState, position: LyricsPosition?, lyricsFocus: Bool) -> LyricsAttributes.ContentState {
         LyricsAttributes.ContentState(
             title: state.title,
             artist: state.artist,
             sourceName: state.source.displayName,
-            currentLine: position?.currentLine ?? "♪ \(state.title)",
+            currentLine: position?.currentLine ?? state.title,
             nextLine: position?.nextLine ?? "",
+            nextNextLine: position?.nextNextLine ?? "",
             progress: position?.trackProgress ?? 0,
-            isPlaying: state.isPlaying
+            isPlaying: state.isPlaying,
+            lyricsFocus: lyricsFocus
         )
     }
 }

@@ -9,12 +9,23 @@ struct LiveActivityUpdatePolicy {
         var trackKey: String
         var lineIndex: Int?
         var isPlaying: Bool
+        var lyricsFocus: Bool
     }
 
     private var last: Snapshot?
 
-    mutating func shouldUpdate(trackKey: String, lineIndex: Int?, isPlaying: Bool) -> Bool {
-        let snapshot = Snapshot(trackKey: trackKey, lineIndex: lineIndex, isPlaying: isPlaying)
+    mutating func shouldUpdate(
+        trackKey: String,
+        lineIndex: Int?,
+        isPlaying: Bool,
+        lyricsFocus: Bool = false
+    ) -> Bool {
+        let snapshot = Snapshot(
+            trackKey: trackKey,
+            lineIndex: lineIndex,
+            isPlaying: isPlaying,
+            lyricsFocus: lyricsFocus
+        )
         guard snapshot != last else { return false }
         last = snapshot
         return true
@@ -22,8 +33,13 @@ struct LiveActivityUpdatePolicy {
 
     /// Call after starting a fresh activity whose initial content already
     /// reflects the given state, or after ending one.
-    mutating func seed(trackKey: String, lineIndex: Int?, isPlaying: Bool) {
-        last = Snapshot(trackKey: trackKey, lineIndex: lineIndex, isPlaying: isPlaying)
+    mutating func seed(trackKey: String, lineIndex: Int?, isPlaying: Bool, lyricsFocus: Bool = false) {
+        last = Snapshot(
+            trackKey: trackKey,
+            lineIndex: lineIndex,
+            isPlaying: isPlaying,
+            lyricsFocus: lyricsFocus
+        )
     }
 
     mutating func reset() {

@@ -131,6 +131,7 @@ private func state(
         #expect(pos?.lineIndex == 1)
         #expect(pos?.currentLine == "two")
         #expect(pos?.nextLine == "three")
+        #expect(pos?.nextNextLine == nil)
         #expect(pos?.positionMs == 12_000)
         // line window 10 s → 20 s, position 12 s ⇒ 20 %
         #expect(abs((pos?.lineProgress ?? 0) - 0.2) < 0.001)
@@ -147,6 +148,7 @@ private func state(
         #expect(pos?.lineIndex == nil)
         #expect(pos?.currentLine == nil)
         #expect(pos?.nextLine == "one")
+        #expect(pos?.nextNextLine == "two")
     }
 
     @Test func nilStateClearsPosition() {

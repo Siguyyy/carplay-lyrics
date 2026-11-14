@@ -66,4 +66,17 @@ import Testing
         #expect(first)
         #expect(afterReset)
     }
+
+    @Test func layoutPreferenceChangeUpdatesTheLiveActivity() {
+        var policy = LiveActivityUpdatePolicy()
+        let initial = policy.shouldUpdate(trackKey: "a", lineIndex: 2, isPlaying: true)
+        let changedLayout = policy.shouldUpdate(
+            trackKey: "a",
+            lineIndex: 2,
+            isPlaying: true,
+            lyricsFocus: true
+        )
+        #expect(initial)
+        #expect(changedLayout)
+    }
 }

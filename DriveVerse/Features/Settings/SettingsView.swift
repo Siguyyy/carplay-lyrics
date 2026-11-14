@@ -57,6 +57,14 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("Lyrics focus", isOn: lyricsFocusBinding)
+            } header: {
+                Text("CarPlay layout")
+            } footer: {
+                Text("When on, the Live Activity gives the current lyric more room and shows additional upcoming lines. The text keeps its normal size and wraps; changing this also updates an active Live Activity.")
+            }
+
+            Section {
                 EmptyView()
             } header: {
                 Text("Drive Mode & battery")
@@ -80,5 +88,9 @@ struct SettingsView: View {
 
     private var pinBinding: Binding<SourcePin> {
         Binding(get: { model.sourcePin }, set: { model.sourcePin = $0 })
+    }
+
+    private var lyricsFocusBinding: Binding<Bool> {
+        Binding(get: { model.lyricsFocusLayout }, set: { model.lyricsFocusLayout = $0 })
     }
 }
