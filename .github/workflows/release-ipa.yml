@@ -2,14 +2,20 @@ name: Build and publish IPA
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths:
+      - "DriveVerse/**"
+      - "DriveVerseWidgets/**"
+      - "project.yml"
+      - "scripts/**"
+      - ".github/workflows/release-ipa.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -18,75 +24,60 @@ jobs:
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        run: ./scripts/generate.sh
+        run: bash scripts/generate.sh
 
-      - name: Import signing certificate and profile
-        env:
-          P12_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          APP_PROFILE_BASE64: ${{ secrets.IOS_APP_PROFILE_BASE64 }}
-          WIDGET_PROFILE_BASE64: ${{ secrets.IOS_WIDGET_PROFILE_BASE64 }}
+      - name: Build unsigned iOS app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project DriveVerse.xcodeproj \
+            -scheme DriveVerse \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build 2>&1 | tee xcodebuild.log
+
+      - name: Package unsigned IPA
         run: |
           set -euo pipefail
-          test -n "$P12_BASE64"
-          test -n "$P12_PASSWORD"
-          test -n "$APP_PROFILE_BASE64"
-          test -n "$WIDGET_PROFILE_BASE64"
-          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
-          security create-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
-          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
-          security import "$RUNNER_TEMP/signing.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
-          security list-keychains -d user -s "$KEYCHAIN"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP" "$KEYCHAIN"
-          echo "$APP_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/app.mobileprovision"
-          echo "$WIDGET_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/widget.mobileprovision"
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          APP_PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/app.mobileprovision")")
-          WIDGET_PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/widget.mobileprovision")")
-          cp "$RUNNER_TEMP/app.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$APP_PROFILE_UUID.mobileprovision"
-          cp "$RUNNER_TEMP/widget.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$WIDGET_PROFILE_UUID.mobileprovision"
-          echo "APP_PROFILE_UUID=$APP_PROFILE_UUID" >> "$GITHUB_ENV"
-          echo "WIDGET_PROFILE_UUID=$WIDGET_PROFILE_UUID" >> "$GITHUB_ENV"
+          app="build/Build/Products/Release-iphoneos/DriveVerse.app"
+          test -d "$app"
+          rm -rf Payload
+          mkdir Payload
+          cp -R "$app" Payload/
+          zip -qry CarPlayLyrics-unsigned.ipa Payload
 
-      - name: Archive app
-        run: |
-          xcodebuild -project DriveVerse.xcodeproj -scheme DriveVerse \
-            -sdk iphoneos -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/CarPlayLyrics.xcarchive" \
-            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="$APP_PROFILE_UUID" \
-            archive
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CarPlayLyrics-unsigned-ipa
+          path: CarPlayLyrics-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Export IPA
-        run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>method</key><string>ad-hoc</string>
-            <key>signingStyle</key><string>manual</string>
-            <key>provisioningProfiles</key><dict>
-              <key>com.siguyyy.carplaylyrics</key><string>$APP_PROFILE_UUID</string>
-              <key>com.siguyyy.carplaylyrics.widgets</key><string>$WIDGET_PROFILE_UUID</string>
-            </dict>
-          </dict></plist>
-          PLIST
-          /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:com.siguyyy.carplaylyrics $APP_PROFILE_UUID" "$RUNNER_TEMP/ExportOptions.plist"
-          /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:com.siguyyy.carplaylyrics.widgets $WIDGET_PROFILE_UUID" "$RUNNER_TEMP/ExportOptions.plist"
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/CarPlayLyrics.xcarchive" \
-            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
-          cp "$RUNNER_TEMP/export/DriveVerse.ipa" "$RUNNER_TEMP/CarPlayLyrics.ipa"
+      - name: Publish downloadable GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: CarPlay Lyrics build ${{ github.run_number }}
+          body: |
+            Automatically built from commit `${{ github.sha }}`.
 
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-            gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/CarPlayLyrics.ipa" \
-              --title "CarPlay Lyrics $GITHUB_REF_NAME" --generate-notes
-          else
-            echo "Manual run built the IPA at $RUNNER_TEMP/CarPlayLyrics.ipa; tag a version to publish a release."
-          fi
+            Download `CarPlayLyrics-unsigned.ipa` below and install/sign it with AltStore, SideStore, Sideloadly, or another sideloading tool. This package is unsigned and cannot be installed directly by tapping it on an iPhone.
+
+            This build targets iOS 17+ for the app and preview. Actual Live Activity mirroring to CarPlay requires iOS 26+.
+          prerelease: false
+          make_latest: true
+          files: CarPlayLyrics-unsigned.ipa
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: carplay-lyrics-xcodebuild-log
+          path: xcodebuild.log
+          if-no-files-found: ignore

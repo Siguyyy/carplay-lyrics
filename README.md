@@ -23,15 +23,13 @@ Spotify support is optional. To enable it, copy `DriveVerse/Resources/Secrets.ex
 
 ## Downloadable IPA releases
 
-The `Build and publish IPA` GitHub Actions workflow can create a signed IPA and attach it to a GitHub Release when you push a version tag such as `v0.1.0`. Configure these repository Actions secrets first:
+Every successful build from `main` (or manual Actions run) publishes an unsigned IPA as a GitHub Release and also retains it as a workflow artifact for 30 days. Open the repository's **Releases** page and download `CarPlayLyrics-unsigned.ipa`, or use the stable latest-release URL:
 
-- `IOS_CERTIFICATE_BASE64`: base64 encoded Apple Development or Distribution `.p12` certificate
-- `IOS_CERTIFICATE_PASSWORD`: password for that `.p12`
-- `IOS_TEAM_ID`: your Apple Developer Team ID
-- `IOS_APP_PROFILE_BASE64`: base64 encoded ad hoc provisioning profile for `com.siguyyy.carplaylyrics`
-- `IOS_WIDGET_PROFILE_BASE64`: base64 encoded ad hoc provisioning profile for `com.siguyyy.carplaylyrics.widgets`
+`https://github.com/Siguyyy/carplay-lyrics/releases/latest/download/CarPlayLyrics-unsigned.ipa`
 
-The IPA is signed for the devices included in that profile. An IPA built without a matching signing identity and provisioning profile is not directly installable on an iPhone. For personal sideloading, use a development/ad hoc profile or sign it with your preferred sideload tool.
+The IPA is unsigned, like AirCard17's convenient sideload packages. Install it using AltStore, SideStore, Sideloadly, or another tool that signs it with your Apple account. Tapping an unsigned IPA on the phone will not install it.
+
+The workflow runs XcodeGen with Bash explicitly, builds the iOS app with code signing disabled, packages `Payload/DriveVerse.app`, uploads an artifact, and attaches the IPA to a uniquely tagged release. No signing secrets are required.
 
 ## Reliability notes
 
