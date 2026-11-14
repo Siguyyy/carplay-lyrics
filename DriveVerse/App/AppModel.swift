@@ -93,12 +93,6 @@ final class AppModel: ObservableObject {
             return (3...10).contains(value) ? value : SpotifySource.defaultActiveInterval
         }
         spotifySource = spotify
-        spotify.onDiagnostic = { [weak self] message, date in
-            Task { @MainActor in
-                self?.spotifyDiagnostic = message
-                self?.spotifyDiagnosticAt = date
-            }
-        }
 
         let applePublisher: AnyPublisher<NowPlayingState?, Never>
 #if os(iOS)
@@ -115,6 +109,13 @@ final class AppModel: ObservableObject {
             spotifyPublisher: spotify.statePublisher,
             pin: savedPin.flatMap(SourcePin.init(rawValue:)) ?? .auto
         )
+
+        spotify.onDiagnostic = { [weak self] message, date in
+            Task { @MainActor in
+                self?.spotifyDiagnostic = message
+                self?.spotifyDiagnosticAt = date
+            }
+        }
 
         wire()
 
