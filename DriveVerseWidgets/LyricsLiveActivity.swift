@@ -12,7 +12,7 @@ struct DriveVerseWidgetsBundle: WidgetBundle {
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        let configuration = ActivityConfiguration(for: LyricsAttributes.self) { context in
+        ActivityConfiguration(for: LyricsAttributes.self) { context in
             // Keep the ActivityConfiguration on APIs available from iOS 17.
             if #available(iOS 18.0, *) {
                 SmallAwareLyricsView(context: context)
@@ -58,11 +58,7 @@ struct LyricsLiveActivity: Widget {
                     .foregroundStyle(.tint)
             }
         }
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
+        .supplementalActivityFamilies([.small])
     }
 }
 
