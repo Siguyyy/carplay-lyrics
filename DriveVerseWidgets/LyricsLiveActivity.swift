@@ -6,34 +6,14 @@ import ActivityKit
 @main
 struct DriveVerseWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        if #available(iOS 18.0, *) {
-            CarPlayLyricsLiveActivity()
-        } else {
-            LyricsLiveActivity()
-        }
+        LyricsLiveActivity()
     }
 }
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        lyricsActivityConfiguration()
-    }
-}
-
-@available(iOS 18.0, *)
-private struct CarPlayLyricsLiveActivity: Widget {
-    var body: some WidgetConfiguration {
-        lyricsActivityConfiguration().supplementalActivityFamilies([.small])
-    }
-}
-
-private func lyricsActivityConfiguration() -> ActivityConfiguration<LyricsAttributes> {
         ActivityConfiguration(for: LyricsAttributes.self) { context in
-            if #available(iOS 18.0, *) {
-                SmallAwareLyricsView(context: context)
-            } else {
-                LockScreenLyricsView(context: context)
-            }
+            SmallAwareLyricsView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -73,6 +53,8 @@ private func lyricsActivityConfiguration() -> ActivityConfiguration<LyricsAttrib
                     .foregroundStyle(.tint)
             }
         }
+        .supplementalActivityFamilies([.small])
+    }
 }
 
 @available(iOS 18.0, *)

@@ -76,6 +76,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.siguyyy.carplaylyrics.widgets
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     info:
       path: DriveVerseWidgets/Info.plist
       properties:

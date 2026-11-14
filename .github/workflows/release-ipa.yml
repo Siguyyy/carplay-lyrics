@@ -87,7 +87,7 @@ jobs:
 
             Download `CarPlayLyrics-unsigned.ipa` below and install/sign it with AltStore, SideStore, Sideloadly, or another sideloading tool. This package is unsigned and cannot be installed directly by tapping it on an iPhone.
 
-            This build targets iOS 17+ for the app and preview. Actual Live Activity mirroring to CarPlay requires iOS 26+.
+            The app targets iOS 17+, the Live Activity extension requires iOS 18+, and Live Activity mirroring to CarPlay requires iOS 26+.
 
             Spotify Development Mode requires an active Premium subscription on the Developer app owner's account. The connected Spotify account must be on the app's Users and Access allowlist.
           prerelease: false
