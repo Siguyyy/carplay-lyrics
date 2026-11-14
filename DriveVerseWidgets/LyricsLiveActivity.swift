@@ -12,16 +12,7 @@ struct DriveVerseWidgetsBundle: WidgetBundle {
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            configuration.supplementalActivityFamilies([.small])
-        } else {
-            configuration
-        }
-    }
-
-    private var configuration: ActivityConfiguration<LyricsAttributes> {
         ActivityConfiguration(for: LyricsAttributes.self) { context in
-            // Keep the ActivityConfiguration on APIs available from iOS 17.
             if #available(iOS 18.0, *) {
                 SmallAwareLyricsView(context: context)
             } else {
@@ -53,18 +44,31 @@ struct LyricsLiveActivity: Widget {
                         .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                Image(systemName: context.state.isPlaying ? "music.note" : "pause.fill")
-                    .foregroundStyle(.tint)
-            } compactTrailing: {
                 Text(context.state.currentLine)
-                    .font(.caption2)
-                    .lineLimit(1)
-                    .frame(maxWidth: 72)
+                    .font(.caption)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: 120, alignment: .leading)
+            } compactTrailing: {
+                EmptyView()
             } minimal: {
                 Image(systemName: "music.note")
                     .font(.caption2)
                     .foregroundStyle(.tint)
             }
+        }
+        .addingCarPlaySmallFamily()
+    }
+}
+
+private extension ActivityConfiguration {
+    /// CarPlay uses the Live Activity's small family on iOS 26. Keep the
+    /// iOS 17 deployment target by adding that family only where available.
+    func addingCarPlaySmallFamily() -> some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            self.supplementalActivityFamilies([.small])
+        } else {
+            self
         }
     }
 }
@@ -82,14 +86,13 @@ private struct SmallAwareLyricsView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Text(context.state.currentLine)
-                    .font(.system(size: 15, weight: .bold))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
+                    .font(.system(size: 16, weight: .bold))
+                    .lineLimit(3)
                 if !context.state.nextLine.isEmpty {
                     Text(context.state.nextLine)
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
