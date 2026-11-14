@@ -57,19 +57,6 @@ struct LyricsLiveActivity: Widget {
                     .foregroundStyle(.tint)
             }
         }
-        .addingCarPlaySmallFamily()
-    }
-}
-
-private extension ActivityConfiguration {
-    /// CarPlay uses the Live Activity's small family on iOS 26. Keep the
-    /// iOS 17 deployment target by adding that family only where available.
-    func addingCarPlaySmallFamily() -> some WidgetConfiguration {
-        if #available(iOS 18.0, *) {
-            self.supplementalActivityFamilies([.small])
-        } else {
-            self
-        }
     }
 }
 
