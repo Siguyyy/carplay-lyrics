@@ -12,6 +12,14 @@ struct DriveVerseWidgetsBundle: WidgetBundle {
 
 struct LyricsLiveActivity: Widget {
     var body: some WidgetConfiguration {
+        if #available(iOS 18.0, *) {
+            configuration.supplementalActivityFamilies([.small])
+        } else {
+            configuration
+        }
+    }
+
+    private var configuration: ActivityConfiguration<LyricsAttributes> {
         ActivityConfiguration(for: LyricsAttributes.self) { context in
             // Keep the ActivityConfiguration on APIs available from iOS 17.
             if #available(iOS 18.0, *) {
@@ -58,7 +66,6 @@ struct LyricsLiveActivity: Widget {
                     .foregroundStyle(.tint)
             }
         }
-        .supplementalActivityFamilies([.small])
     }
 }
 
