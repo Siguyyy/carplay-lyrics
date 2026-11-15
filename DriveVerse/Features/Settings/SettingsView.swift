@@ -65,11 +65,33 @@ struct SettingsView: View {
             }
 
             Section {
-                EmptyView()
+                LabeledContent("Drive Mode", value: model.driveMode ? "On" : "Off")
+                LabeledContent("Lyric sync tick") {
+                    Text(model.syncTickAt?.formatted(date: .omitted, time: .standard) ?? "Not started")
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.driveModeDiagnostic)
+                    if let date = model.driveModeDiagnosticAt {
+                        Text("Updated \(date.formatted(date: .omitted, time: .standard))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .font(.footnote)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.activityDiagnostic)
+                    if let date = model.activityDiagnosticAt {
+                        Text("Updated \(date.formatted(date: .omitted, time: .standard))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .font(.footnote)
             } header: {
-                Text("Drive Mode & battery")
+                Text("Drive Mode diagnostics")
             } footer: {
-                Text("Drive Mode keeps DriveVerse awake in the background using a low-power location session, so lyrics keep updating on CarPlay and the lock screen while you drive. Locations are discarded immediately and never stored. It uses extra battery, so it's opt-in. This approach is fine for a personal sideloaded app but would not pass App Store review.")
+                Text("Drive Mode uses a Core Location background activity session while enabled; coordinates are discarded. The timestamps above help identify whether iOS is still delivering location callbacks and whether ActivityKit updates are completing. If lyrics freeze, reopening the app rebuilds the session and refreshes playback. Background execution is controlled by iOS, so this cannot guarantee uninterrupted updates. Location use increases battery consumption; this is intended for personal sideloading.")
             }
 
             Section {

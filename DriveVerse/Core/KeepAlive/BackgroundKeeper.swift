@@ -27,10 +27,13 @@ final class BackgroundKeeper: NSObject, CLLocationManagerDelegate {
 
     private let manager = CLLocationManager()
     private var wantsRunning = false
+    private var backgroundSession: CLBackgroundActivitySession?
     private(set) var isRunning = false
+    private(set) var lastLocationUpdateAt: Date?
 
     /// Surfaced on the Home screen when a permission problem blocks Drive Mode.
     var onIssue: ((String) -> Void)?
+    var onDiagnostic: ((String, Date) -> Void)?
 
     override init() {
         super.init()
@@ -61,17 +64,39 @@ final class BackgroundKeeper: NSObject, CLLocationManagerDelegate {
 
     func stop() {
         wantsRunning = false
-        guard isRunning else { return }
+        guard isRunning || backgroundSession != nil else { return }
         isRunning = false
         manager.stopUpdatingLocation()
         manager.allowsBackgroundLocationUpdates = false
+        backgroundSession?.invalidate()
+        backgroundSession = nil
+        report("Background location session stopped.")
+    }
+
+    /// Rebuild Core Location's session after returning from a long background
+    /// stretch. iOS can suspend delivery; merely seeing Drive Mode enabled
+    /// doesn't prove the session is still producing callbacks.
+    func refresh() {
+        guard wantsRunning else { return }
+        isRunning = false
+        manager.stopUpdatingLocation()
+        manager.allowsBackgroundLocationUpdates = false
+        backgroundSession?.invalidate()
+        backgroundSession = nil
+        activate()
     }
 
     private func activate() {
         guard wantsRunning, !isRunning else { return }
+        // On iOS 17+, keep an explicit Core Location background activity
+        // session alive while Drive Mode is active. The CLLocationManager
+        // stream remains the actual location service; the session lets a
+        // When-In-Use authorized app continue receiving its events.
+        backgroundSession = CLBackgroundActivitySession()
         manager.allowsBackgroundLocationUpdates = true
         manager.startUpdatingLocation()
         isRunning = true
+        report("Background activity session started; waiting for a location callback.")
         // "Always" lets the CarPlay automation start Drive Mode with the app
         // launched straight into the background; When-In-Use is enough for
         // sessions begun in the foreground.
@@ -83,6 +108,7 @@ final class BackgroundKeeper: NSObject, CLLocationManagerDelegate {
     // MARK: - CLLocationManagerDelegate
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        report("Location authorization: \(authorizationDescription(manager.authorizationStatus)).")
         guard wantsRunning else { return }
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
@@ -97,11 +123,30 @@ final class BackgroundKeeper: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Self.log.warning("location error: \(error.localizedDescription, privacy: .public)")
+        report("Location update error: \(error.localizedDescription)")
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // Positions are irrelevant and discarded — the session's existence is
-        // the feature.
+        // Coordinates are intentionally discarded; retain only the callback
+        // time so diagnostics can distinguish a live session from a stale one.
+        guard !locations.isEmpty else { return }
+        lastLocationUpdateAt = Date()
+        report("Location callback received; coordinates discarded.")
+    }
+
+    private func report(_ message: String) {
+        onDiagnostic?(message, Date())
+    }
+
+    private func authorizationDescription(_ status: CLAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: return "not determined"
+        case .restricted: return "restricted"
+        case .denied: return "denied"
+        case .authorizedAlways: return "Always"
+        case .authorizedWhenInUse: return "While Using"
+        @unknown default: return "unknown"
+        }
     }
 }
 #endif

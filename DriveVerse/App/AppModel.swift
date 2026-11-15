@@ -40,19 +40,16 @@ final class AppModel: ObservableObject {
     @Published private(set) var spotifyNeedsReconnect = false
     @Published private(set) var spotifyDiagnostic = "Waiting for first playback check."
     @Published private(set) var spotifyDiagnosticAt: Date?
+    @Published private(set) var driveModeDiagnostic = "Drive Mode is off."
+    @Published private(set) var driveModeDiagnosticAt: Date?
+    @Published private(set) var activityDiagnostic = "No Live Activity update recorded yet."
+    @Published private(set) var activityDiagnosticAt: Date?
     @Published var errorMessage: String?
+    var syncTickAt: Date? { syncEngine.lastTickAt }
     @Published var driveMode = false {
         didSet {
 #if os(iOS)
             liveActivity.holdWhilePaused = driveMode
-#if canImport(ActivityKit)
-            // Without this Settings toggle the frequent-updates Info.plist
-            // key is inert and ActivityKit's standard budget silently
-            // freezes the tile after roughly a minute of lyric updates.
-            if driveMode, !ActivityAuthorizationInfo().frequentPushesEnabled {
-                errorMessage = "For smooth lyrics, turn on Settings → DriveVerse → Live Activities → More Frequent Updates."
-            }
-#endif
 #endif
             syncLiveActivity()
         }
@@ -126,6 +123,21 @@ final class AppModel: ObservableObject {
             }
         }
 
+#if os(iOS)
+        backgroundKeeper.onDiagnostic = { [weak self] message, date in
+            Task { @MainActor in
+                self?.driveModeDiagnostic = message
+                self?.driveModeDiagnosticAt = date
+            }
+        }
+        liveActivity.onDiagnostic = { [weak self] message, date in
+            Task { @MainActor in
+                self?.activityDiagnostic = message
+                self?.activityDiagnosticAt = date
+            }
+        }
+#endif
+
         wire()
 
 #if os(iOS)
@@ -155,6 +167,12 @@ final class AppModel: ObservableObject {
     func foregroundResync() {
         guard started else { return }
 #if os(iOS)
+        if driveMode {
+            // A user report found that opening the app or toggling Drive Mode
+            // often unfreezes lyrics. Recreate the background location session
+            // on foreground return, then force fresh source reads below.
+            backgroundKeeper.refresh()
+        }
         appleSource.refresh()
 #endif
         spotifySource.pollNow()
@@ -303,6 +321,10 @@ final class AppModel: ObservableObject {
     private func updateKeepAlive() {
 #if os(iOS)
         let shouldRun = driveMode
+        if !shouldRun {
+            driveModeDiagnostic = "Drive Mode is off."
+            driveModeDiagnosticAt = Date()
+        }
         if shouldRun && !backgroundKeeper.isRunning {
             do {
                 try backgroundKeeper.start()

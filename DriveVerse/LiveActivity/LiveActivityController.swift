@@ -37,6 +37,8 @@ final class LiveActivityController {
 
     /// Drive Mode's keep-alive only runs while an activity is actually up.
     var isActive: Bool { activity != nil }
+    /// Last request/completion for in-app screen-off troubleshooting.
+    var onDiagnostic: ((String, Date) -> Void)?
 
     /// While Drive Mode is on the session must survive arbitrary pauses:
     /// hold the activity (pause glyph) instead of ending it after the grace
@@ -96,7 +98,7 @@ final class LiveActivityController {
         case .sendNow:
             cancelPendingUpdate() // superseded by newer content
             Task {
-                await activity.update(ActivityContent(state: content, staleDate: nil))
+                await self.sendUpdate(content, to: activity)
             }
         case .coalesce(let fireIn):
             pendingContent = content
@@ -114,8 +116,16 @@ final class LiveActivityController {
             self.pendingContent = nil
             self.pendingTask = nil
             self.throttle.noteSent(now: Date())
-            await activity.update(ActivityContent(state: content, staleDate: nil))
+            await self.sendUpdate(content, to: activity)
         }
+    }
+
+    private func sendUpdate(_ content: LyricsAttributes.ContentState, to activity: Activity<LyricsAttributes>) async {
+        let startedAt = Date()
+        onDiagnostic?("Sending Live Activity update (\(content.isPlaying ? "playing" : "paused"), lyrics focus \(content.lyricsFocus ? "on" : "off")).", startedAt)
+        await activity.update(ActivityContent(state: content, staleDate: nil))
+        let completedAt = Date()
+        onDiagnostic?("Live Activity update completed in \(Int(completedAt.timeIntervalSince(startedAt) * 1000)) ms.", completedAt)
     }
 
     private func cancelPendingUpdate() {
@@ -143,6 +153,7 @@ final class LiveActivityController {
                 content: ActivityContent(state: content, staleDate: nil)
             )
             activity = requested
+            onDiagnostic?("Live Activity started.", Date())
             watch(requested)
             throttle.noteSent(now: Date())
             if let state {
@@ -163,6 +174,7 @@ final class LiveActivityController {
             }
         } catch {
             Self.log.error("Activity.request failed: \(error.localizedDescription, privacy: .public)")
+            onDiagnostic?("Live Activity could not start: \(error.localizedDescription)", Date())
             activity = nil
         }
     }
@@ -179,6 +191,7 @@ final class LiveActivityController {
                     self.activity = nil
                     self.policy.reset()
                     self.cancelPendingUpdate()
+                    self.onDiagnostic?("Live Activity ended or was dismissed by iOS or the user.", Date())
                     Self.log.warning("activity ended outside the app — background restart impossible; reopen the app or rerun the CarPlay automation")
                 }
             }

@@ -24,6 +24,7 @@ final class SyncEngine {
     var now: () -> Date
     private(set) var anchor: NowPlayingState?
     private(set) var lines: [LRCLine] = []
+    private(set) var lastTickAt: Date?
     let positionSubject = CurrentValueSubject<LyricsPosition?, Never>(nil)
     private var timer: AnyCancellable?
 
@@ -68,6 +69,7 @@ final class SyncEngine {
     }
 
     func tick() {
+        lastTickAt = now()
         guard let anchor else {
             positionSubject.send(nil)
             return

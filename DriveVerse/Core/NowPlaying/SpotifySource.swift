@@ -41,8 +41,13 @@ final class SpotifySource: NowPlayingSource {
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
+                let cycleStartedAt = ProcessInfo.processInfo.systemUptime
                 let delay = await self.pollOnce()
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                // Keep the configured interval measured start-to-start rather
+                // than adding network latency on top of every polling cycle.
+                let elapsed = ProcessInfo.processInfo.systemUptime - cycleStartedAt
+                let remaining = max(0, delay - elapsed)
+                try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
             }
         }
     }
@@ -80,16 +85,20 @@ final class SpotifySource: NowPlayingSource {
         request.timeoutInterval = 10
 
         do {
+            let requestStartedAt = ProcessInfo.processInfo.systemUptime
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return Self.idleInterval }
+            let responseTimeMs = Int((ProcessInfo.processInfo.systemUptime - requestStartedAt) * 1000)
             switch http.statusCode {
             case 200:
                 let state = try Self.parseCurrentlyPlaying(data, capturedAt: Date())
-                report(state == nil ? "Spotify returned playback data without a track (possibly an ad or private session)." : "Playback detected (HTTP 200).")
+                report(state == nil
+                    ? "Spotify returned playback data without a track (possibly an ad or private session, \(responseTimeMs) ms)."
+                    : "Playback detected (HTTP 200, \(responseTimeMs) ms).")
                 subject.send(state)
                 return state?.isPlaying == true ? activeInterval() : Self.idleInterval
             case 204: // nothing playing
-                report("Spotify returned HTTP 204: no current playback is available to this account. Start playback on the connected account, then refresh.")
+                report("Spotify returned HTTP 204 (\(responseTimeMs) ms): no current playback is available to this account. Start playback on the connected account, then refresh.")
                 subject.send(nil)
                 return Self.idleInterval
             case 401:
