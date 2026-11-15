@@ -25,6 +25,7 @@ final class SyncEngine {
     private(set) var anchor: NowPlayingState?
     private(set) var lines: [LRCLine] = []
     private(set) var lastTickAt: Date?
+    private(set) var maxTickGap: TimeInterval = 0
     let positionSubject = CurrentValueSubject<LyricsPosition?, Never>(nil)
     private var timer: AnyCancellable?
 
@@ -69,7 +70,11 @@ final class SyncEngine {
     }
 
     func tick() {
-        lastTickAt = now()
+        let tickDate = now()
+        if let lastTickAt {
+            maxTickGap = max(maxTickGap, tickDate.timeIntervalSince(lastTickAt))
+        }
+        lastTickAt = tickDate
         guard let anchor else {
             positionSubject.send(nil)
             return
@@ -79,6 +84,12 @@ final class SyncEngine {
             atMs: pos, lines: lines,
             durationMs: anchor.durationMs, isPlaying: anchor.isPlaying
         ))
+    }
+
+    /// Returns and clears the largest timer gap observed since the prior read.
+    func consumeMaxTickGap() -> TimeInterval {
+        defer { maxTickGap = 0 }
+        return maxTickGap
     }
 
     // MARK: - Pure helpers

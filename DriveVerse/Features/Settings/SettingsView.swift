@@ -70,6 +70,10 @@ struct SettingsView: View {
                     Text(model.syncTickAt?.formatted(date: .omitted, time: .standard) ?? "Not started")
                         .foregroundStyle(.secondary)
                 }
+                LabeledContent("Largest sync gap") {
+                    Text(model.lastObservedSyncGap.map { String(format: "%.1f s", $0) } ?? "Not measured")
+                        .foregroundStyle(.secondary)
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(model.driveModeDiagnostic)
                     if let date = model.driveModeDiagnosticAt {

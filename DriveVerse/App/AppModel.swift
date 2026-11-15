@@ -44,6 +44,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var driveModeDiagnosticAt: Date?
     @Published private(set) var activityDiagnostic = "No Live Activity update recorded yet."
     @Published private(set) var activityDiagnosticAt: Date?
+    @Published private(set) var lastObservedSyncGap: TimeInterval?
     @Published var errorMessage: String?
     var syncTickAt: Date? { syncEngine.lastTickAt }
     @Published var driveMode = false {
@@ -166,6 +167,9 @@ final class AppModel: ObservableObject {
     /// detection snaps the line immediately.
     func foregroundResync() {
         guard started else { return }
+        // Capture timer stalls before forcing fresh source reads/session state.
+        let observedGap = syncEngine.consumeMaxTickGap()
+        lastObservedSyncGap = max(lastObservedSyncGap ?? 0, observedGap)
 #if os(iOS)
         if driveMode {
             // A user report found that opening the app or toggling Drive Mode
