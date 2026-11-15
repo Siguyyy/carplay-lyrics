@@ -122,7 +122,7 @@ final class LiveActivityController {
 
     private func sendUpdate(_ content: LyricsAttributes.ContentState, to activity: Activity<LyricsAttributes>) async {
         let startedAt = Date()
-        onDiagnostic?("Sending Live Activity update (\(content.isPlaying ? "playing" : "paused"), lyrics focus \(content.lyricsFocus ? "on" : "off")).", startedAt)
+        onDiagnostic?("Sending Live Activity update (\(content.isPlaying ? "playing" : "paused"), lyrics focus \(content.lyricsFocus == true ? "on" : "off")).", startedAt)
         await activity.update(ActivityContent(state: content, staleDate: nil))
         let completedAt = Date()
         onDiagnostic?("Live Activity update completed in \(Int(completedAt.timeIntervalSince(startedAt) * 1000)) ms.", completedAt)
