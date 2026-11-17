@@ -23,7 +23,12 @@ Spotify support is optional. To enable it, add your Spotify client ID in the app
 
 ## Automatic Drive Mode with CarPlay
 
-The app exposes **Start Drive Mode** and **Stop Drive Mode** actions to Shortcuts. To start the Live Activity automatically, create a Personal Automation with the **CarPlay → Connects** trigger and run the Simon's Karaoke **Start Drive Mode** action. Turn off **Ask Before Running**. Create a second automation using **CarPlay → Disconnects** and the **Stop Drive Mode** action. iOS does not offer third-party apps a general phone-boot or music-start trigger, so the CarPlay automation is the supported hands-free option.
+Open **Set up automatic CarPlay** in the app. First, turn Drive Mode on once while the app is open and grant location access, choosing **Always** so iOS can start the session from a background CarPlay automation. Turn Drive Mode off again, then use the Shortcuts link on the setup screen to open the app’s actions. iOS requires the user to create the two Personal Automations:
+
+1. **CarPlay → Connects** → **Start Drive Mode**.
+2. **CarPlay → Disconnects** → **Stop Drive Mode**.
+
+Set each automation to run automatically (on older iOS versions, turn off **Ask Before Running**). The app can provide Shortcuts actions and a direct link to them, but iOS does not provide a public API for an app to create or configure a user’s personal automations. The connect action starts Drive Mode and its lyrics Live Activity in the background; it cannot force Simon’s Karaoke to open as a CarPlay app. iOS also does not offer third-party apps a general phone-boot or music-start trigger, so the CarPlay connection automation is the supported hands-free option.
 
 Optional quiet start/stop notifications can be enabled in **Settings → Notifications** inside the app. They include no song or lyric information.
 

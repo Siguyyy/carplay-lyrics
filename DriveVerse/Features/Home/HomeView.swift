@@ -18,6 +18,13 @@ struct HomeView: View {
                     .buttonStyle(.bordered)
                     SpotifySection()
                     DriveModeCard()
+                    NavigationLink {
+                        CarPlayAutomationSetupView()
+                    } label: {
+                        Label("Set up automatic CarPlay", systemImage: "car.side.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
                     if model.appleMusicAuth == .denied {
                         InfoBanner(
                             symbol: "exclamationmark.triangle",

@@ -6,7 +6,7 @@ import AppIntents
 /// isn't running — and is the one context iOS allows Activity.request from
 /// without the app being foregrounded.
 struct StartDriveModeIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Start Drive Mode"
+    static let title: LocalizedStringResource = "Start Simon’s Karaoke Drive Mode"
     static let description = IntentDescription(
         "Turns on Drive Mode and starts the lyrics Live Activity for whatever plays next."
     )
@@ -22,7 +22,7 @@ struct StartDriveModeIntent: LiveActivityIntent {
 }
 
 struct StopDriveModeIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Stop Drive Mode"
+    static let title: LocalizedStringResource = "Stop Simon’s Karaoke Drive Mode"
     static let description = IntentDescription(
         "Turns off Drive Mode and ends the lyrics Live Activity."
     )
