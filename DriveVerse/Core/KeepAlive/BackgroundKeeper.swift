@@ -115,7 +115,7 @@ final class BackgroundKeeper: NSObject, CLLocationManagerDelegate {
             activate()
         case .denied, .restricted:
             wantsRunning = false
-            onIssue?("Drive Mode needs location access to stay alive in the background. Allow it for DriveVerse in Settings → Privacy → Location Services.")
+            onIssue?("Drive Mode needs location access to stay alive in the background. Allow it for Simon's Karaoke in Settings → Privacy → Location Services.")
         default:
             break
         }

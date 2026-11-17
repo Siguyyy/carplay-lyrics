@@ -143,7 +143,7 @@ final class LiveActivityController {
         guard activity == nil, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let content = state.map { Self.content(state: $0, position: position, lyricsFocus: lyricsFocus) }
             ?? LyricsAttributes.ContentState(
-                title: "DriveVerse", artist: "", sourceName: "",
+                title: "Simon's Karaoke", artist: "", sourceName: "",
                 currentLine: "Waiting for music…", nextLine: "", nextNextLine: "",
                 progress: 0, isPlaying: false, lyricsFocus: lyricsFocus
             )

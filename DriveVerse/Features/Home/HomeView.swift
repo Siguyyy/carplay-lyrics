@@ -21,7 +21,7 @@ struct HomeView: View {
                     if model.appleMusicAuth == .denied {
                         InfoBanner(
                             symbol: "exclamationmark.triangle",
-                            text: "Apple Music detection is off. Allow Media & Apple Music access in Settings → DriveVerse."
+                            text: "Apple Music detection is off. Allow Media & Apple Music access in Settings → Simon's Karaoke."
                         )
                     }
                     if let message = model.errorMessage {
@@ -69,7 +69,7 @@ private struct NowPlayingCard: View {
             } else {
                 Label("Nothing playing", systemImage: "music.note")
                     .foregroundStyle(.secondary)
-                Text("Start a song in Apple Music or Spotify — DriveVerse picks it up automatically.")
+                Text("Start a song in Apple Music or Spotify — Simon's Karaoke picks it up automatically.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

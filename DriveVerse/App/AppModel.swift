@@ -51,6 +51,9 @@ final class AppModel: ObservableObject {
         didSet {
 #if os(iOS)
             liveActivity.holdWhilePaused = driveMode
+            if oldValue != driveMode {
+                Task { await DriveModeNotifications.shared.postDriveModeStatus(isOn: driveMode) }
+            }
 #endif
             syncLiveActivity()
         }
@@ -334,7 +337,7 @@ final class AppModel: ObservableObject {
                 try backgroundKeeper.start()
             } catch {
                 driveMode = false
-                errorMessage = "Drive Mode needs location access to stay alive in the background. Allow it for DriveVerse in Settings → Privacy → Location Services."
+                errorMessage = "Drive Mode needs location access to stay alive in the background. Allow it for Simon's Karaoke in Settings → Privacy → Location Services."
             }
         } else if !shouldRun && backgroundKeeper.isRunning {
             backgroundKeeper.stop()

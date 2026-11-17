@@ -1,6 +1,6 @@
-# CarPlay Lyrics
+# Simon's Karaoke
 
-Synced lyrics for Apple Music or Spotify, designed for a glance on the lock screen and (on supported iOS versions) CarPlay. This project is a personal-use sideload build based on the DriveVerse codebase.
+Synced lyrics for Apple Music or Spotify, designed for a glance on the lock screen and (on supported iOS versions) CarPlay. The Home Screen app name is Simon's Karaoke.
 
 ## Compatibility
 
@@ -19,7 +19,13 @@ On a Mac with Xcode 16 or newer:
 
 For a local unsigned simulator build, Xcode handles signing automatically. For a phone build, set your own team and bundle identifier in `project.yml`, regenerate, and configure signing in Xcode.
 
-Spotify support is optional. To enable it, add your Spotify client ID in the app, register `carplaylyrics://callback` as the redirect URI in your Spotify Developer app, and authorize Spotify. **Spotify Development Mode requires an active Premium subscription on the Developer app owner’s account.** The Spotify account connected in CarPlay Lyrics must also be added under that app’s **Users and Access** allowlist. Without these requirements, Spotify may authorize successfully but playback requests can fail with HTTP 403. Keep client credentials private; never commit personal secrets.
+Spotify support is optional. To enable it, add your Spotify client ID in the app, register `carplaylyrics://callback` as the redirect URI in your Spotify Developer app, and authorize Spotify. **Spotify Development Mode requires an active Premium subscription on the Developer app owner’s account.** The Spotify account connected in Simon's Karaoke must also be added under that app’s **Users and Access** allowlist. Without these requirements, Spotify may authorize successfully but playback requests can fail with HTTP 403. Keep client credentials private; never commit personal secrets.
+
+## Automatic Drive Mode with CarPlay
+
+The app exposes **Start Drive Mode** and **Stop Drive Mode** actions to Shortcuts. To start the Live Activity automatically, create a Personal Automation with the **CarPlay → Connects** trigger and run the Simon's Karaoke **Start Drive Mode** action. Turn off **Ask Before Running**. Create a second automation using **CarPlay → Disconnects** and the **Stop Drive Mode** action. iOS does not offer third-party apps a general phone-boot or music-start trigger, so the CarPlay automation is the supported hands-free option.
+
+Optional quiet start/stop notifications can be enabled in **Settings → Notifications** inside the app. They include no song or lyric information.
 
 ## Downloadable IPA releases
 

@@ -10,8 +10,14 @@ struct DriveVerseApp: App {
         WindowGroup {
             HomeView()
                 .environmentObject(model)
+                .task {
+                    _ = await DriveModeNotifications.shared.scheduleExpiryReminders()
+                }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { model.foregroundResync() }
+                    if phase == .active {
+                        model.foregroundResync()
+                        Task { _ = await DriveModeNotifications.shared.scheduleExpiryReminders() }
+                    }
                 }
         }
     }
