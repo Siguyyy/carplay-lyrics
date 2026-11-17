@@ -1,6 +1,5 @@
 #if os(iOS)
 import Foundation
-import Security
 import UserNotifications
 
 @MainActor
@@ -96,20 +95,18 @@ final class DriveModeNotifications {
         guard let message = try? Data(contentsOf: profileURL),
               !message.isEmpty else { return nil }
 
-        var decoder: CMSDecoder?
-        guard CMSDecoderCreate(&decoder) == errSecSuccess, let decoder else { return nil }
-        let updateStatus = message.withUnsafeBytes { bytes in
-            guard let baseAddress = bytes.baseAddress else { return errSecDecode }
-            return CMSDecoderUpdateMessage(decoder, baseAddress, message.count)
+        // CMSDecoder is macOS-only. iOS provisioning profiles wrap their XML
+        // plist in a CMS envelope, so locate the plist payload directly.
+        let plistOpen = Data("<plist".utf8)
+        let plistClose = Data("</plist>".utf8)
+        guard let plistStart = message.range(of: plistOpen),
+              let plistEnd = message.range(of: plistClose, in: plistStart.lowerBound..<message.endIndex) else {
+            return nil
         }
-        guard updateStatus == errSecSuccess,
-              CMSDecoderFinalizeMessage(decoder) == errSecSuccess else { return nil }
-        var decodedContent: CFData?
-        guard CMSDecoderCopyContent(decoder, &decodedContent) == errSecSuccess,
-              let decodedContent,
-              let profile = try? PropertyListSerialization.propertyList(
-                from: decodedContent as Data, options: [], format: nil
-              ) as? [String: Any] else { return nil }
+        let plistData = Data(message[plistStart.lowerBound..<plistEnd.upperBound])
+        guard let profile = try? PropertyListSerialization.propertyList(
+            from: plistData, options: [], format: nil
+        ) as? [String: Any] else { return nil }
         return profile["ExpirationDate"] as? Date
     }
 }
